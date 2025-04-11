@@ -1,0 +1,6 @@
+/* 解决 KaTeX 行内公式导致的行间距重叠问题 */
+.katex {
+  vertical-align: middle;
+  line-height: 1.5;
+  display: inline-block;
+}

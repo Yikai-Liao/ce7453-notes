@@ -5,6 +5,7 @@ language = "zh-CN"
 
 [output.html]
 default-theme = "light"
+additional-css = ["katex-fix.css"]
 git-repository-url = "https://github.com/Yikai-Liao/ce7453-notes"
 edit-url-template = "https://github.com/Yikai-Liao/ce7453-notes/edit/main/{path}"
 
