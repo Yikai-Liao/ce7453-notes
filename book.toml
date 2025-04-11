@@ -28,5 +28,3 @@ include-src = false
 block-delimiter = { left = "$$", right = "$$" }
 inline-delimiter = { left = "$", right = "$" }
 pre-render = true
-
-[output.pdf]

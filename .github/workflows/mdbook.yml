@@ -49,10 +49,6 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build with mdBook
         run: mdbook build
-      - name: Install mdbook-pdf-export
-        run: npm install -g mdbook-pdf-export
-      - name: Build PDF with mdbook-pdf-export
-        run: npx mdbook-pdf-export build ./book ./book/CE7453.pdf
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
