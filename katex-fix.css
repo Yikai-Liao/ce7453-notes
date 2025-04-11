@@ -1,6 +1,7 @@
-/* 解决 KaTeX 行内公式导致的行间距重叠问题 */
-.katex {
-  vertical-align: middle;
-  line-height: 1.5;
+/* 仅调整 KaTeX 行内公式的垂直对齐，不影响正文行高 */
+.katex,
+.katex-mathml,
+.katex-html {
+  vertical-align: -0.15em !important;
   display: inline-block;
 }
