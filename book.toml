@@ -7,4 +7,9 @@ language = "zh-CN"
 default-theme = "light"
 git-repository-url = "https://github.com/Yikai-Liao/ce7453-notes"
 edit-url-template = "https://github.com/Yikai-Liao/ce7453-notes/edit/main/{path}"
-mathjax-support = true
+# mathjax-support = true # Disable MathJax
+katex-support = true   # Enable KaTeX
+[output.html.katex]
+# Optional: KaTeX configuration options
+# See https://katex.org/docs/options.html
+# macros = { "\\RR": "\\mathbb{R}" }
