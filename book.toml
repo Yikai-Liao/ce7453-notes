@@ -1,0 +1,10 @@
+[book]
+title = "CE7453 Numerical Algorithms Notes"
+authors = ["Your Name"]
+language = "zh-CN"
+
+[output.html]
+theme = "light"
+default-theme = "light"
+git-repository-url = "https://github.com/Yikai-Liao/ce7453-notes"
+edit-url-template = "https://github.com/Yikai-Liao/ce7453-notes/edit/main/{path}"
