@@ -39,16 +39,20 @@ jobs:
           cargo install --version ${MDBOOK_VERSION} mdbook
       - name: Install mdbook-katex
         run: cargo install mdbook-katex
-      - name: Install mdbook-pdf
-        run: cargo install mdbook-pdf
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
       - name: Build with mdBook
         run: mdbook build
-      - name: Build PDF with mdbook-pdf
-        run: mdbook-pdf build
+      - name: Install mdbook-pdf-export
+        run: npm install -g mdbook-pdf-export
+      - name: Build PDF with mdbook-pdf-export
+        run: npx mdbook-pdf-export build ./book ./book/CE7453.pdf
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
