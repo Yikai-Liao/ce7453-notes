@@ -7,3 +7,4 @@ language = "zh-CN"
 default-theme = "light"
 git-repository-url = "https://github.com/Yikai-Liao/ce7453-notes"
 edit-url-template = "https://github.com/Yikai-Liao/ce7453-notes/edit/main/{path}"
+mathjax-support = true
