@@ -59,6 +59,41 @@
 - $P_0^{(2)} = (1-0.5)(0.5,1) + 0.5(2,2.5) = (1.25,1.75)$
 - 答：$P(0.5) = (1.25, 1.75)$
 
+**Python代码示例 (de Casteljau)**：
+```python
+import numpy as np
+
+def de_casteljau(control_points, t):
+    """使用 de Casteljau 算法计算 Bezier 曲线上一点"""
+    points = np.array(control_points, dtype=float)
+    n = len(points) - 1 # 曲线阶数
+    
+    # P_i^(0) = P_i
+    current_points = points.copy()
+    
+    for r in range(1, n + 1): # 从 r=1 到 n
+        new_points = []
+        for i in range(n - r + 1): # P_i^(r) 的 i 从 0 到 n-r
+            p_r_i = (1 - t) * current_points[i] + t * current_points[i+1]
+            new_points.append(p_r_i)
+        current_points = np.array(new_points)
+        # print(f"r={r}, points={current_points}") # 可选：打印中间步骤
+            
+    return current_points[0] # P_0^(n)
+
+# 例题数据
+P_bezier = [[0, 0], [1, 2], [3, 3]]
+t_bezier = 0.5
+
+# 计算
+point_on_curve = de_casteljau(P_bezier, t_bezier)
+print(f"例题 (Bezier de Casteljau): P({t_bezier}) = {point_on_curve}")
+
+# 验证 (可选)
+# expected_point = np.array([1.25, 1.75])
+# assert np.allclose(point_on_curve, expected_point)
+```
+
 ---
 
 ## 3. B-spline 曲线
@@ -125,6 +160,39 @@
 - 最终曲线点 $r(1) = N_{1,4}(1)P_1 + N_{2,4}(1)P_2 + N_{3,4}(1)P_3 = 0.25*(1,2) + 0.5*(3,3) + 0.25*(4,0) = (0.25*1 + 0.5*3 + 0.25*4, 0.25*2 + 0.5*3 + 0.25*0) = (2.75, 2.0)$
 - 答：$r(1) = (2.75, 2.0)$
 
+**Python代码示例 (手动计算基函数)**：
+```python
+import numpy as np
+
+# 例题数据
+control_points_bspline = np.array([[0, 0], [1, 2], [3, 3], [4, 0]])
+knots_bspline = np.array([0,0,0,0,1,2,2,2,2])
+u_bspline = 1
+
+# 按照文档手动计算的基函数值
+N14_at_1 = 0.25
+N24_at_1 = 0.5
+N34_at_1 = 0.25
+
+# 影响 u=1 的控制点是 P1, P2, P3 (索引1, 2, 3)
+point_on_bspline = N14_at_1 * control_points_bspline[1] + \
+                   N24_at_1 * control_points_bspline[2] + \
+                   N34_at_1 * control_points_bspline[3]
+                   
+print(f"例题 (B-spline 手动基函数): r({u_bspline}) = {point_on_bspline}")
+
+# 验证 (可选)
+# expected_point = np.array([2.75, 2.0])
+# assert np.allclose(point_on_bspline, expected_point)
+
+# 注意: 实际应用中会使用递归函数计算基函数或直接使用 scipy.interpolate
+# from scipy.interpolate import BSpline
+# k = 3 # B样条阶数 (degree), k=order-1. Order k=4 for cubic.
+# tck = (knots_bspline, control_points_bspline.T, k)
+# point_scipy = BSpline(*tck)(u_bspline)
+# print(f"例题 (B-spline Scipy): r({u_bspline}) = {point_scipy}")
+```
+
 ### 新增例题：计算给定控制点 $P_0=(0,0)$，$P_1=(1,1)$，$P_2=(2,0)$ 的二次Bezier曲线在 $t=0.5$ 处的点
 
 **解答步骤**：
@@ -133,6 +201,21 @@
    - $P_1^{(1)} = 0.5 \times P_1 + 0.5 \times P_2 = (1.5, 0.5)$
 2. 第二层：$P_0^{(2)} = 0.5 \times P_0^{(1)} + 0.5 \times P_1^{(1)} = (1, 0.5)$
 3. 结果：曲线点为 $(1, 0.5)$。
+
+**Python代码示例 (使用上面的 de_casteljau 函数)**：
+```python
+# 新增例题数据
+P_bezier_add = [[0, 0], [1, 1], [2, 0]]
+t_bezier_add = 0.5
+
+# 计算
+point_on_curve_add = de_casteljau(P_bezier_add, t_bezier_add)
+print(f"新增例题 (Bezier de Casteljau): P({t_bezier_add}) = {point_on_curve_add}")
+
+# 验证 (可选)
+# expected_point = np.array([1, 0.5])
+# assert np.allclose(point_on_curve_add, expected_point)
+```
 
 ---
 
@@ -161,6 +244,45 @@
   - $L(1.5) = 1*(-0.125) + 2*(0.75) = -0.125 + 1.5 = 1.375$
 - 答：$L(1.5) = 1.375$
 
+**Python代码示例 (Lagrange 插值)**：
+```python
+import numpy as np
+from scipy import interpolate # 用于验证
+
+def lagrange_basis(x_data, i, x):
+    """计算第 i 个 Lagrange 基函数 l_i(x)"""
+    n = len(x_data)
+    li = 1.0
+    for j in range(n):
+        if i != j:
+            li *= (x - x_data[j]) / (x_data[i] - x_data[j])
+    return li
+
+def lagrange_interpolation(x_data, y_data, x_interp):
+    """使用 Lagrange 插值计算 x_interp 处的函数值"""
+    n = len(x_data)
+    result = 0.0
+    for i in range(n):
+        result += y_data[i] * lagrange_basis(x_data, i, x_interp)
+    return result
+
+# 例题数据
+x_lagrange = np.array([0, 1, 2])
+y_lagrange = np.array([1, 2, 0])
+x_interp_lagrange = 1.5
+
+# 计算
+interp_value_lagrange = lagrange_interpolation(x_lagrange, y_lagrange, x_interp_lagrange)
+print(f"例题 (Lagrange 插值): L({x_interp_lagrange}) = {interp_value_lagrange}")
+
+# 验证 (可选)
+# expected_value = 1.375
+# assert np.isclose(interp_value_lagrange, expected_value)
+# lagrange_poly = interpolate.lagrange(x_lagrange, y_lagrange)
+# scipy_value = lagrange_poly(x_interp_lagrange)
+# assert np.isclose(scipy_value, expected_value)
+```
+
 ### 4.2 Newton 插值
 
 - **公式**：  
@@ -185,6 +307,50 @@
   - $N(1.5) = 1 + 1*(1.5) + (-1.5)*(1.5)*(1.5-1) = 1 + 1.5 + (-1.5)*(1.5)*(0.5) = 1 + 1.5 - 1.125 = 1.375$
 - 答：$N(1.5) = 1.375$
 
+**Python代码示例 (Newton 插值)**：
+```python
+import numpy as np
+
+def divided_differences(x_data, y_data):
+    """计算差商表，返回 Newton 多项式系数"""
+    n = len(x_data)
+    coef = np.zeros([n, n])
+    coef[:, 0] = y_data # 第一列是 y 值
+    
+    for j in range(1, n): # 列
+        for i in range(n - j): # 行
+            coef[i, j] = (coef[i + 1, j - 1] - coef[i, j - 1]) / (x_data[i + j] - x_data[i])
+            
+    return coef[0, :] # 返回第一行作为系数 a0, a1, a2, ...
+
+def newton_polynomial(coefficients, x_data, x):
+    """根据差商系数计算 Newton 插值多项式在 x 处的值"""
+    n = len(coefficients)
+    result = coefficients[0]
+    term = 1.0
+    
+    for i in range(1, n):
+        term *= (x - x_data[i - 1]) # 计算 (x-x0), (x-x0)(x-x1), ...
+        result += coefficients[i] * term
+        
+    return result
+
+# 例题数据
+x_newton = np.array([0, 1, 2])
+y_newton = np.array([1, 2, 0])
+x_interp_newton = 1.5
+
+# 计算
+coeffs_newton = divided_differences(x_newton, y_newton)
+interp_value_newton = newton_polynomial(coeffs_newton, x_newton, x_interp_newton)
+print(f"例题 (Newton 插值) 差商系数: {coeffs_newton}")
+print(f"例题 (Newton 插值): N({x_interp_newton}) = {interp_value_newton}")
+
+# 验证 (可选)
+# expected_value = 1.375
+# assert np.isclose(interp_value_newton, expected_value)
+```
+
 ### 4.3 样条插值（Spline Interpolation）
 
 - **三次样条**：分段三次多项式，保证 $C^2$ 连续，常用于平滑曲线拟合。
@@ -205,6 +371,40 @@
   - $S_1(x) = 1 + 1.5x - 0.5x^3$
   - $S_2(x) = 2 - 0.5(x-1) - 1.5(x-1)^2 + 0.5(x-1)^3$
 - 答：自然三次样条插值多项式如上。
+
+**Python代码示例 (使用 Scipy)**：
+```python
+import numpy as np
+from scipy.interpolate import CubicSpline
+
+# 例题数据
+x_spline = np.array([0, 1, 2])
+y_spline = np.array([1, 2, 0])
+
+# 计算自然三次样条 (bc_type='natural')
+cs = CubicSpline(x_spline, y_spline, bc_type='natural')
+
+# 打印样条系数 (可选)
+# print("样条系数 (分段):")
+# for i in range(len(cs.c[0, :])):
+#     print(f" 区间 {i}: {cs.c[:, i]}")
+
+# 在 x=1.5 处插值 (虽然例题只要求构造)
+x_interp_spline = 1.5
+interp_value_spline = cs(x_interp_spline)
+print(f"例题 (自然三次样条插值): S({x_interp_spline}) = {interp_value_spline}")
+
+# 验证 x=0, 1, 2 处的插值结果
+print(f"验证: S(0)={cs(0)}, S(1)={cs(1)}, S(2)={cs(2)}")
+assert np.isclose(cs(0), 1)
+assert np.isclose(cs(1), 2)
+assert np.isclose(cs(2), 0)
+
+# 验证边界条件 S''(0)=0, S''(2)=0
+print(f"验证: S''(0)={cs(0, 2)}, S''(2)={cs(2, 2)}")
+assert np.isclose(cs(0, 2), 0)
+assert np.isclose(cs(2, 2), 0)
+```
 
 ---
 

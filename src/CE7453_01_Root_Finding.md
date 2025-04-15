@@ -100,6 +100,84 @@
 
 - **英文关键词**：bisection method, bracket, interval halving, binary search, convergence, tolerance, error bound
 
+#### 例题1：二分法求解 $f(x)=x^3+x-1$
+
+**问题**：用二分法求 $f(x)=x^3+x-1$ 在 $[0,1]$ 内的根，精度要求为 $10^{-2}$。
+
+**分析**：
+$f(0) = -1$, $f(1) = 1$。
+$f(0)f(1) < 0$，符合二分法使用条件。
+初始区间 $[a_0, b_0] = [0, 1]$，区间长度为 1。
+要求精度 $\epsilon = 10^{-2} = 0.01$。
+需要满足 $\frac{|b_0-a_0|}{2^n} < \epsilon$，即 $\frac{1}{2^n} < 0.01$。$2^n > 100$。
+因为 $2^6=64$, $2^7=128$，所以至少需要 $n=7$ 次迭代。
+
+**迭代过程**：
+
+| n | $a_n$ | $b_n$ | $c_n=(a_n+b_n)/2$ | $f(c_n)$ | 区间 | 长度 | 
+|---|---|---|---|---|---|---|
+| 0 | 0 | 1 | 0.5 | -0.375 | [0.5, 1] | 0.5 |
+| 1 | 0.5 | 1 | 0.75 | 0.171875 | [0.5, 0.75] | 0.25 |
+| 2 | 0.5 | 0.75 | 0.625 | -0.130859 | [0.625, 0.75] | 0.125 |
+| 3 | 0.625 | 0.75 | 0.6875 | 0.012451 | [0.625, 0.6875] | 0.0625 |
+| 4 | 0.625 | 0.6875 | 0.65625 | -0.061012 | [0.65625, 0.6875] | 0.03125 |
+| 5 | 0.65625 | 0.6875 | 0.671875 | -0.024755 | [0.671875, 0.6875] | 0.015625 |
+| 6 | 0.671875 | 0.6875 | 0.6796875 | -0.006270 | [0.6796875, 0.6875] | 0.0078125 |
+
+**结果**：经过7次迭代，得到近似根 $x \approx c_6 = 0.6796875$。此时区间长度为 $0.0078125 < 0.01$，满足精度要求。
+
+**Python代码示例**：
+```python
+def is_close(a, b, rtol=1e-5, atol=1e-8):
+    """
+    检查两个数值是否足够接近，考虑浮点数精度问题
+    """
+    return np.abs(a - b) <= (atol + rtol * np.abs(b))
+
+def test_example1_bisection():
+    """
+    验证例题1：用二分法求 f(x)=x^3+x-1 在 [0,1] 内的根，精度 10^-2
+    文档中的答案：x ≈ 0.6796875
+    """
+    f = lambda x: x**3 + x - 1
+    
+    # 二分法实现
+    def bisection_method(f, a, b, tol=1e-10, max_iter=100):
+        if f(a) * f(b) >= 0:
+            raise ValueError("区间端点函数值必须异号")
+        
+        iter_count = 0
+        while (b - a) / 2 > tol and iter_count < max_iter:
+            c = (a + b) / 2
+            if f(c) == 0:
+                return c
+            elif f(a) * f(c) < 0:
+                b = c
+            else:
+                a = c
+            iter_count += 1
+        
+        return (a + b) / 2
+    
+    # 用自己实现的二分法计算
+    root_bisection = bisection_method(f, 0, 1, tol=1e-2)
+    # 用scipy的方法计算精确值
+    root_exact = optimize.root_scalar(f, bracket=[0, 1], method='brentq').root
+    
+    # 文档中给出的答案
+    root_document = 0.6796875
+    
+    # 验证自己实现的方法是否与文档答案一致
+    # 这里我们只展示计算过程，验证部分在test文件中执行
+    print(f"二分法计算结果: {root_bisection}")
+    print(f"文档答案: {root_document}")
+    print(f"Scipy精确解: {root_exact}")
+    print(f"函数在文档答案处的值: {f(root_document)}")
+
+# 运行示例 (需要 import numpy as np 和 from scipy import optimize)
+# test_example1_bisection()
+```
+
 ---
 
 ### 1.2.2 牛顿法（Newton's Method）
@@ -186,6 +264,174 @@
 
 - **英文关键词**：Newton's method, Newton-Raphson method, tangent method, quadratic convergence, initial guess, derivative, root finding
 
+#### 例题2：牛顿法求解 $f(x)=x^2-2$
+
+**问题**：用牛顿法求 $f(x)=x^2-2$ 的正根，取初值 $x_0=1$，精度要求 $10^{-4}$。
+
+**分析**：
+$f(x)=x^2-2$
+$f'(x)=2x$
+迭代公式：$x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)} = x_n - \frac{x_n^2-2}{2x_n} = \frac{2x_n^2 - (x_n^2-2)}{2x_n} = \frac{x_n^2+2}{2x_n} = 0.5(x_n + \frac{2}{x_n})$
+
+**迭代过程**：
+$x_0 = 1$
+$x_1 = 0.5(1 + 2/1) = 1.5$
+$x_2 = 0.5(1.5 + 2/1.5) = 0.5(1.5 + 1.3333) = 0.5(2.8333) = 1.41665$
+$x_3 = 0.5(1.41665 + 2/1.41665) = 0.5(1.41665 + 1.41176) = 0.5(2.82841) = 1.414205$
+$x_4 = 0.5(1.414205 + 2/1.414205) = 0.5(1.414205 + 1.414221) = 0.5(2.828426) = 1.414213$
+
+**结果**：$|x_4-x_3| = |1.414213 - 1.414205| = 0.000008 < 10^{-4}$，满足精度要求。近似根 $x \approx 1.4142$。 （实际根为 $\sqrt{2} \approx 1.41421356$）
+
+**Python代码示例**：
+```python
+def test_example2_newton():
+    """
+    验证例题2：用牛顿法求 f(x)=x^2-2 的根，x₀=1，精度 10^-4
+    文档中的答案：x ≈ 1.4142
+    """
+    f = lambda x: x**2 - 2
+    df = lambda x: 2*x
+    
+    # 牛顿法实现
+    def newton_method(f, df, x0, tol=1e-10, max_iter=100):
+        x = x0
+        for i in range(max_iter):
+            fx = f(x)
+            if abs(fx) < tol:
+                return x
+            
+            dfx = df(x)
+            if dfx == 0:
+                raise ValueError("导数为零，牛顿法失效")
+            
+            x_new = x - fx / dfx
+            if abs(x_new - x) < tol:
+                return x_new
+            
+            x = x_new
+        
+        return x
+    
+    # 用自己实现的牛顿法计算
+    root_newton = newton_method(f, df, 1, tol=1e-4)
+    # 文档中给出的答案
+    root_document = 1.4142
+    # 精确值是根号2
+    root_exact = np.sqrt(2)
+    
+    # 验证部分在test文件中执行
+    print(f"牛顿法计算结果: {root_newton}")
+    print(f"文档答案: {root_document}")
+    print(f"精确解: {root_exact}")
+    print(f"函数在文档答案处的值: {f(root_document)}")
+
+# 运行示例 (需要 import numpy as np)
+# test_example2_newton()
+```
+
+#### 例题3：牛顿法求解 $f(x) = e^x - x - 2$
+
+**问题**：用牛顿法求解 $f(x) = e^x - x - 2$ 的根，取初始值 $x_0 = 1$。
+
+**分析**：
+$f(x) = e^x - x - 2$
+$f'(x) = e^x - 1$
+迭代公式：$x_{n+1} = x_n - \frac{e^{x_n} - x_n - 2}{e^{x_n} - 1}$
+
+**迭代过程**：
+$x_0 = 1$
+$f(x_0) = e^1 - 1 - 2 = e - 3 \approx -0.2817$
+$f'(x_0) = e^1 - 1 = e - 1 \approx 1.7183$
+$x_1 = 1 - \frac{-0.2817}{1.7183} \approx 1 + 0.1640 = 1.1640$
+
+$f(x_1) = e^{1.1640} - 1.1640 - 2 \approx 3.2020 - 3.1640 = 0.0380$
+$f'(x_1) = e^{1.1640} - 1 \approx 3.2020 - 1 = 2.2020$
+$x_2 = 1.1640 - \frac{0.0380}{2.2020} \approx 1.1640 - 0.0173 = 1.1467$
+
+$f(x_2) = e^{1.1467} - 1.1467 - 2 \approx 3.1483 - 3.1467 = 0.0016$
+$f'(x_2) = e^{1.1467} - 1 \approx 3.1483 - 1 = 2.1483$
+$x_3 = 1.1467 - \frac{0.0016}{2.1483} \approx 1.1467 - 0.0007 = 1.1460$
+
+**结果**：迭代几次后，解趋于稳定。近似根 $x \approx 1.146$。
+
+**Python代码示例**：
+```python
+def test_example3_newton():
+    """
+    验证例题3：用牛顿法求解 f(x) = e^x - x - 2 的根，初始值 x₀ = 1
+    文档中的答案：x ≈ 1.146
+    """
+    f = lambda x: np.exp(x) - x - 2
+    df = lambda x: np.exp(x) - 1
+    
+    # 使用上面的牛顿法实现
+    root_newton = newton_method(f, df, 1, tol=1e-4)
+    # 用scipy的方法计算精确值
+    root_exact = optimize.root_scalar(f, x0=1, fprime=df, method='newton').root
+    # 文档中给出的答案
+    root_document = 1.146
+    
+    # 验证部分在test文件中执行
+    print(f"牛顿法计算结果: {root_newton}") # 实际计算会更精确
+    print(f"文档答案: {root_document}")
+    print(f"Scipy精确解: {root_exact}")
+    print(f"函数在文档答案处的值: {f(root_document)}")
+
+# 运行示例 (需要 import numpy as np 和 from scipy import optimize, 以及上面的 newton_method 函数)
+# test_example3_newton()
+```
+
+#### 牛顿法求 $\sqrt{3}$ 的例题
+
+**问题**：使用牛顿法计算 $\sqrt{3}$，取初值 $x_0 = 2$。
+
+**分析**：
+求 $\sqrt{3}$ 等价于求 $f(x) = x^2 - 3 = 0$ 的正根。
+$f(x) = x^2 - 3$
+$f'(x) = 2x$
+迭代公式：$x_{n+1} = x_n - \frac{x_n^2 - 3}{2x_n} = \frac{2x_n^2 - x_n^2 + 3}{2x_n} = \frac{x_n^2 + 3}{2x_n} = 0.5(x_n + \frac{3}{x_n})$
+
+**迭代过程**：
+$x_0 = 2$
+$x_1 = 0.5(2 + 3/2) = 0.5(2 + 1.5) = 0.5(3.5) = 1.75$
+$x_2 = 0.5(1.75 + 3/1.75) \approx 0.5(1.75 + 1.714286) = 0.5(3.464286) = 1.732143$
+$x_3 = 0.5(1.732143 + 3/1.732143) \approx 0.5(1.732143 + 1.731959) = 0.5(3.464102) = 1.732051$
+
+**结果**：迭代3次后，得到近似根 $x \approx 1.73205$。
+
+**Python代码示例**：
+```python
+def test_sqrt3_newton():
+    """
+    验证牛顿法求 sqrt(3) 的例题
+    文档中的答案：sqrt(3) ≈ 1.73205
+    """
+    f = lambda x: x**2 - 3
+    df = lambda x: 2*x
+    
+    # 牛顿法迭代公式的简化版本
+    def newton_sqrt3(x0, iterations=3):
+        x = x0
+        for _ in range(iterations):
+            x = 0.5 * (x + 3/x)
+        return x
+    
+    # 用简化的牛顿法计算（文档中的迭代过程）
+    root_newton = newton_sqrt3(2, iterations=3)
+    # 文档中给出的答案
+    root_document = 1.73205
+    # 精确值是根号3
+    root_exact = np.sqrt(3)
+    
+    # 验证部分在test文件中执行
+    print(f"简化牛顿法计算结果 (3次迭代): {root_newton}")
+    print(f"文档答案: {root_document}")
+    print(f"精确解: {root_exact}")
+
+# 运行示例 (需要 import numpy as np)
+# test_sqrt3_newton()
+```
+
 ---
 
 ### 1.2.3 割线法（Secant Method）
@@ -255,26 +501,125 @@
   end function
   ```
 
-### 例题：用割线法求 $f(x)=x^3+x-1$ 的根，初始值 $x_0=0, x_1=1$，精度 $10^{-2}$
+- **英文关键词**：secant method, finite difference Newton, superlinear convergence, initial points
 
-**解答步骤**：
-1. 初始值：$x_0=0, x_1=1$
-2. 计算函数值：$f(0)=-1, f(1)=1$
-3. 第一次迭代：
-   - $x_2 = x_1 - f(x_1)\frac{x_1-x_0}{f(x_1)-f(x_0)} = 1 - 1 \times \frac{1-0}{1-(-1)} = 1 - \frac{1}{2} = 0.5$
-4. 第二次迭代：
-   - $f(0.5) = 0.5^3+0.5-1 = -0.375$
-   - $x_3 = x_2 - f(x_2)\frac{x_2-x_1}{f(x_2)-f(x_1)} = 0.5 - (-0.375)\frac{0.5-1}{-0.375-1} = 0.5 - (-0.375)\frac{-0.5}{-1.375} \approx 0.5 - 0.136 = 0.636$
-5. 第三次迭代：
-   - $f(0.636) = 0.636^3+0.636-1 \approx 0.257 + 0.636 - 1 = -0.107$
-   - $x_4 = x_3 - f(x_3)\frac{x_3-x_2}{f(x_3)-f(x_2)} = 0.636 - (-0.107)\frac{0.636-0.5}{-0.107-(-0.375)} \approx 0.636 - (-0.107)\frac{0.136}{0.268} \approx 0.636 + 0.054 = 0.690$
-6. 第四次迭代：
-   - $f(0.690) = 0.690^3+0.690-1 \approx 0.328 + 0.690 - 1 = 0.018$
-   - $x_5 = x_4 - f(x_4)\frac{x_4-x_3}{f(x_4)-f(x_3)} = 0.690 - (0.018)\frac{0.690-0.636}{0.018-(-0.107)} \approx 0.690 - (0.018)\frac{0.054}{0.125} \approx 0.690 - 0.0078 = 0.6822$
-7. 检查精度：$|x_5-x_4| = |0.6822-0.690| = 0.0078 < 10^{-2}$，满足精度要求。
+#### 例题4：割线法求解 $f(x)=x^3+x-1$
 
-**答案**：$x \approx 0.6822$
-- **英文关键词**：secant method, difference quotient, superlinear convergence, derivative-free method, two-point method
+**问题**：用割线法求 $f(x)=x^3+x-1$ 的根，取初值 $x_0=0, x_1=1$。
+
+**分析**：
+$f(x) = x^3+x-1$
+迭代公式：$x_{n+1} = x_n - f(x_n)\frac{x_n-x_{n-1}}{f(x_n)-f(x_{n-1})}$
+
+**迭代过程**：
+$x_0 = 0, f(x_0)=-1$
+$x_1 = 1, f(x_1)=1$
+$x_2 = x_1 - f(x_1)\frac{x_1-x_0}{f(x_1)-f(x_0)} = 1 - 1 \times \frac{1-0}{1-(-1)} = 1 - \frac{1}{2} = 0.5$
+$f(x_2) = (0.5)^3+0.5-1 = 0.125+0.5-1 = -0.375$
+
+$x_3 = x_2 - f(x_2)\frac{x_2-x_1}{f(x_2)-f(x_1)} = 0.5 - (-0.375) \times \frac{0.5-1}{-0.375-1} = 0.5 + 0.375 \times \frac{-0.5}{-1.375} = 0.5 + 0.375 \times 0.3636 = 0.5 + 0.13635 = 0.63635$
+$f(x_3) = (0.63635)^3+0.63635-1 \approx 0.2576 + 0.63635 - 1 = -0.10605$
+
+$x_4 = x_3 - f(x_3)\frac{x_3-x_2}{f(x_3)-f(x_2)} = 0.63635 - (-0.10605) \times \frac{0.63635-0.5}{-0.10605-(-0.375)} = 0.63635 + 0.10605 \times \frac{0.13635}{0.26895} = 0.63635 + 0.10605 \times 0.50697 = 0.63635 + 0.05377 = 0.69012$
+$f(x_4) = (0.69012)^3+0.69012-1 \approx 0.3287 + 0.69012 - 1 = 0.01882$
+
+$x_5 = x_4 - f(x_4)\frac{x_4-x_3}{f(x_4)-f(x_3)} = 0.69012 - (0.01882) \times \frac{0.69012-0.63635}{0.01882-(-0.10605)} = 0.69012 - 0.01882 \times \frac{0.05377}{0.12487} = 0.69012 - 0.00810 = 0.68202$
+$f(x_5) = (0.68202)^3+0.68202-1 \approx 0.3173 + 0.68202 - 1 = -0.00068$
+
+**结果**：迭代5次后，函数值非常接近零。近似根 $x \approx 0.682$。
+
+**Python代码示例**：
+```python
+def test_secant_example():
+    """
+    验证割线法求 f(x)=x^3+x-1 的根的例题
+    文档中的答案：x ≈ 0.6822 (文档计算过程有微小差异，取0.682)
+    """
+    f = lambda x: x**3 + x - 1
+    
+    # 割线法实现
+    def secant_method(f, x0, x1, tol=1e-10, max_iter=100):
+        for i in range(max_iter):
+            f0, f1 = f(x0), f(x1)
+            
+            if abs(f1) < tol:
+                return x1
+            
+            if f1 == f0:
+                raise ValueError("割线法分母为零")
+            
+            x_new = x1 - f1 * (x1 - x0) / (f1 - f0)
+            
+            if abs(x_new - x1) < tol:
+                return x_new
+            
+            x0, x1 = x1, x_new
+        
+        return x1
+    
+    # 用自己实现的割线法计算
+    root_secant = secant_method(f, 0, 1, tol=1e-4)
+    # 用scipy的方法计算精确值
+    root_exact = optimize.root_scalar(f, bracket=[0, 1], method='brentq').root
+    # 文档中给出的答案 (根据我们的计算是 0.682)
+    root_document = 0.682
+    
+    # 验证部分在test文件中执行
+    print(f"割线法计算结果: {root_secant}")
+    print(f"文档答案 (按计算过程): {root_document}")
+    print(f"Scipy精确解: {root_exact}")
+    print(f"函数在文档答案处的值: {f(root_document)}")
+
+# 运行示例 (需要 import numpy as np 和 from scipy import optimize)
+# test_secant_example()
+```
+
+#### 例题5：割线法求解 $f(x)=\cos(x)-x$
+
+**问题**：用割线法求 $f(x)=\cos(x)-x$ 的根，取初值 $x_0=0.5, x_1=1$。
+
+**分析**：
+$f(x) = \cos(x)-x$
+
+**迭代过程**：
+$x_0 = 0.5, f(x_0)=\cos(0.5)-0.5 \approx 0.8776 - 0.5 = 0.3776$
+$x_1 = 1, f(x_1)=\cos(1)-1 \approx 0.5403 - 1 = -0.4597$
+
+$x_2 = x_1 - f(x_1)\frac{x_1-x_0}{f(x_1)-f(x_0)} = 1 - (-0.4597)\frac{1-0.5}{-0.4597-0.3776} = 1 + 0.4597\frac{0.5}{-0.8373} = 1 - 0.4597 \times 0.5968 = 1 - 0.2744 = 0.7256$
+$f(x_2) = \cos(0.7256)-0.7256 \approx 0.7481 - 0.7256 = 0.0225$
+
+$x_3 = x_2 - f(x_2)\frac{x_2-x_1}{f(x_2)-f(x_1)} = 0.7256 - (0.0225)\frac{0.7256-1}{0.0225-(-0.4597)} = 0.7256 - 0.0225\frac{-0.2744}{0.4822} = 0.7256 + 0.0225 \times 0.5691 = 0.7256 + 0.0128 = 0.7384$
+$f(x_3) = \cos(0.7384)-0.7384 \approx 0.7396 - 0.7384 = 0.0012$
+
+$x_4 = x_3 - f(x_3)\frac{x_3-x_2}{f(x_3)-f(x_2)} = 0.7384 - (0.0012)\frac{0.7384-0.7256}{0.0012-0.0225} = 0.7384 - 0.0012\frac{0.0128}{-0.0213} = 0.7384 + 0.0012 \times 0.6009 = 0.7384 + 0.0007 = 0.7391$
+
+**结果**：迭代几次后，解趋于稳定。近似根 $x \approx 0.739$。
+
+**Python代码示例**：
+```python
+def test_cos_x_example():
+    """
+    验证割线法求 f(x) = cos(x) - x 的根的例题
+    文档中的答案：x ≈ 0.739
+    """
+    f = lambda x: np.cos(x) - x
+    
+    # 使用上面的割线法实现
+    root_secant = secant_method(f, 0.5, 1, tol=1e-4)
+    # 用scipy的方法计算精确值
+    root_exact = optimize.root_scalar(f, bracket=[0, 1], method='brentq').root
+    # 文档中给出的答案
+    root_document = 0.739
+    
+    # 验证部分在test文件中执行
+    print(f"割线法计算结果: {root_secant}")
+    print(f"文档答案: {root_document}")
+    print(f"Scipy精确解: {root_exact}")
+    print(f"函数在文档答案处的值: {f(root_document)}")
+
+# 运行示例 (需要 import numpy as np 和 from scipy import optimize, 以及上面的 secant_method 函数)
+# test_cos_x_example()
+```
 
 ---
 
@@ -297,8 +642,6 @@
   - **缺点**：在某些情况下可能收敛缓慢
 
 - **英文关键词**：regula falsi, false position method, bracketing method, hybrid method
-
----
 
 ### 1.2.5 Brent 方法
 
@@ -405,60 +748,6 @@
 **答案**：$x \approx 1.146$
 
 **验证**：$e^{1.146} \approx 3.146$，$1.146 + 2 = 3.146$，方程成立。
-
----
-### 例题：用牛顿法求 $\sqrt{3}$ 的近似值
-
-**问题**：计算 $\sqrt{3}$。
-**思路**：构造函数 $f(x) = x^2 - 3$，其正根即为 $\sqrt{3}$。
-**导数**：$f'(x) = 2x$
-**迭代公式**：$x_{n+1} = x_n - \frac{x_n^2 - 3}{2x_n} = \frac{2x_n^2 - (x_n^2 - 3)}{2x_n} = \frac{x_n^2 + 3}{2x_n} = \frac{1}{2}(x_n + \frac{3}{x_n})$
-**选择初值**：$x_0 = 2$
-**迭代过程**：
-- $x_1 = \frac{1}{2}(2 + \frac{3}{2}) = \frac{1}{2}(3.5) = 1.75$
-- $x_2 = \frac{1}{2}(1.75 + \frac{3}{1.75}) \approx \frac{1}{2}(1.75 + 1.71428) \approx 1.73214$
-- $x_3 = \frac{1}{2}(1.73214 + \frac{3}{1.73214}) \approx \frac{1}{2}(1.73214 + 1.73196) \approx 1.73205$
-**结果**：$\sqrt{3} \approx 1.73205$
-
-### 例题：牛顿法失效或收敛异常的情况
-
-**情况1：导数为零**
-如果某次迭代点 $x_n$ 恰好是 $f'(x_n)=0$ 的点（例如极值点），则迭代公式分母为零，无法继续。
-
-**情况2：迭代进入循环**
-考虑函数 $f(x) = 4x^4 - 6x^2 - \frac{11}{4}$，求根。
-$f'(x) = 16x^3 - 12x$
-迭代公式：$x_{n+1} = x_n - \frac{4x_n^4 - 6x_n^2 - 11/4}{16x_n^3 - 12x_n}$
-若取初值 $x_0 = 1/2$：
-- $f(1/2) = 4(1/16) - 6(1/4) - 11/4 = 1/4 - 3/2 - 11/4 = -1 - 11/4 = -15/4$
-- $f'(1/2) = 16(1/8) - 12(1/2) = 2 - 6 = -4$
-- $x_1 = 1/2 - \frac{-15/4}{-4} = 1/2 - 15/16 = -7/16$
-若取初值 $x_0 = -1/2$：
-- $f(-1/2) = -15/4$
-- $f'(-1/2) = 16(-1/8) - 12(-1/2) = -2 + 6 = 4$
-- $x_1 = -1/2 - \frac{-15/4}{4} = -1/2 + 15/16 = 7/16$
-如果初值选择不当，可能导致迭代在几个值之间震荡或循环，不收敛到根。
-
-**情况3：收敛到非预期根**
-如果函数有多个根，选择不同的初值可能收敛到不同的根。
-
-### 例题4：用割线法求 $f(x) = \cos(x) - x$ 的根，初始值 $x_0 = 0$, $x_1 = 1$
-
-**解答步骤**：
-1. 初始值：$x_0 = 0$, $x_1 = 1$
-2. 计算函数值：
-   - $f(0) = \cos(0) - 0 = 1$
-   - $f(1) = \cos(1) - 1 = 0.540 - 1 = -0.460$
-3. 第一次迭代：
-   - $x_2 = 1 - (-0.460)\frac{1-0}{-0.460-1} = 1 - (-0.460)\frac{1}{-1.460} = 1 + 0.315 = 0.685$
-4. 第二次迭代：
-   - $f(0.685) = \cos(0.685) - 0.685 = 0.778 - 0.685 = 0.093$
-   - $x_3 = 0.685 - (0.093)\frac{0.685-1}{0.093-(-0.460)} = 0.685 - 0.056 = 0.739$
-5. 继续迭代直到收敛，最终得到 $x \approx 0.739$
-
-**答案**：$x \approx 0.739$
-
-**验证**：$\cos(0.739) \approx 0.739$，方程成立。
 
 ---
 
